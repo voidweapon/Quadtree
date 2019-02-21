@@ -10,18 +10,26 @@ public class SpawnController : MonoBehaviour
         Box,
         Circle,
     }
+    public struct AddOrder
+    {
+        public ColliderType colliderType;
+        public int count;
+    }
 
-    public GameObject prefab1;
-    public GameObject prefab2;
+    public QuadTreeCollider prefab1;
+    public QuadTreeCollider prefab2;
     public Transform pool1;
     public Transform pool2;
     public BoxCollider2D bundary;
 
     private Vector2 m_btnSize = new Vector2(100, 50);
-    private List<GameObject> m_pool_1 = new List<GameObject>();
-    private List<GameObject> m_pool_2 = new List<GameObject>();
-    private List<GameObject> activeObj1 = new List<GameObject>();
-    private List<GameObject> activeObj2 = new List<GameObject>();
+
+    private List<QuadTreeCollider> m_pool_1 = new List<QuadTreeCollider>();
+    private List<QuadTreeCollider> m_pool_2 = new List<QuadTreeCollider>();
+    private List<QuadTreeCollider> activeObj1 = new List<QuadTreeCollider>();
+    private List<QuadTreeCollider> activeObj2 = new List<QuadTreeCollider>();
+
+    private Queue<AddOrder> addOrders = new Queue<AddOrder>();
 
     private static SpawnController m_instance = null;
     public static SpawnController Instance {
@@ -36,7 +44,23 @@ public class SpawnController : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-       
+        InitObjectPool();
+    }
+
+    private void InitObjectPool()
+    {
+        QuadTreeCollider obj = null;
+        for (int i = 0; i < 3000; i++)
+        {
+            obj = Instantiate(prefab1, pool1);
+            m_pool_1.Add(obj);
+        }
+
+        for (int i = 0; i < 3000; i++)
+        {
+            obj = Instantiate(prefab2, pool2);
+            m_pool_2.Add(obj);
+        }
     }
 
     private void OnGUI()
@@ -45,7 +69,18 @@ public class SpawnController : MonoBehaviour
         Vector2 BtnPos = new Vector2(Screen.width - m_btnSize.x, 0);
         Vector2 offset = new Vector2(0, 5);
 
-        if(GUI.Button(new Rect(BtnPos, m_btnSize), "Add 1000 box"))
+        if(GUI.Button(new Rect(BtnPos, m_btnSize), "Add 5 box"))
+        {
+            AddCollider(ColliderType.Box, 5);
+        }
+        BtnPos += (new Vector2(0, m_btnSize.y) + offset);
+        if (GUI.Button(new Rect(BtnPos, m_btnSize), "Add 5 circle"))
+        {
+            AddCollider(ColliderType.Circle, 5);
+
+        }
+        BtnPos += (new Vector2(0, m_btnSize.y) + offset);
+        if (GUI.Button(new Rect(BtnPos, m_btnSize), "Add 1000 box"))
         {
             AddCollider(ColliderType.Box, 1000);
         }
@@ -53,17 +88,6 @@ public class SpawnController : MonoBehaviour
         if (GUI.Button(new Rect(BtnPos, m_btnSize), "Add 1000 circle"))
         {
             AddCollider(ColliderType.Circle, 1000);
-
-        }
-        BtnPos += (new Vector2(0, m_btnSize.y) + offset);
-        if (GUI.Button(new Rect(BtnPos, m_btnSize), "Add 10000 box"))
-        {
-            AddCollider(ColliderType.Box, 10000);
-        }
-        BtnPos += (new Vector2(0, m_btnSize.y) + offset);
-        if (GUI.Button(new Rect(BtnPos, m_btnSize), "Add 10000 circle"))
-        {
-            AddCollider(ColliderType.Circle, 10000);
         }
         BtnPos += (new Vector2(0, m_btnSize.y) + offset);
         if (GUI.Button(new Rect(BtnPos, m_btnSize), "Add 1 box"))
@@ -93,36 +117,48 @@ public class SpawnController : MonoBehaviour
 
     void AddCollider(ColliderType colliderType, int count)
     {
-        GameObject obj = null;
+        addOrders.Enqueue(new AddOrder
+        {
+            colliderType = colliderType,
+            count = count,
+        });
+    }
+
+    private void HandleAddOrder(ColliderType colliderType, int count)
+    {
+        QuadTreeCollider objTfm = null;
         Vector3 bundaryPosistion = bundary.gameObject.transform.position;
         Vector2 bundaryPosistion2D = new Vector2(bundaryPosistion.x, bundaryPosistion.y) - bundary.size / 2;
-
+        List<QuadTreeCollider> newObj = new List<QuadTreeCollider>();
         switch (colliderType)
         {
             case ColliderType.Box:
                 for (int i = 0; i < count; i++)
                 {
-                    obj = GetObj1();
-                    obj.transform.SetParent(null);
-                    obj.transform.position = RandomPosition(bundary.size) + bundaryPosistion2D;
-                    CollisionController.Instance.RegisteCollider(obj);
-                    activeObj1.Add(obj);
+                    objTfm = GetObj1();
+                    objTfm.Transform.SetParent(null);
+                    objTfm.Transform.position = RandomPosition(bundary.size) + bundaryPosistion2D;
+                    objTfm.Init();
+                    CollisionController.Instance.RegisteCollider(objTfm);
+                    activeObj1.Add(objTfm);
+                    newObj.Add(objTfm);
                 }
                 break;
             case ColliderType.Circle:
                 for (int i = 0; i < count; i++)
                 {
-                    obj = GetObj2();
-                    obj.transform.SetParent(null);
-                    obj.transform.position = RandomPosition(bundary.size) + bundaryPosistion2D;
-                    CollisionController.Instance.RegisteCollider(obj);
-                    activeObj2.Add(obj);
+                    objTfm = GetObj2();
+                    objTfm.Transform.SetParent(null);
+                    objTfm.Transform.position = RandomPosition(bundary.size) + bundaryPosistion2D;
+                    objTfm.Init();
+                    CollisionController.Instance.RegisteCollider(objTfm);
+                    activeObj2.Add(objTfm);
+                    newObj.Add(objTfm);
                 }
                 break;
             default:
                 break;
         }
-
     }
 
     void ClearCollider()
@@ -139,38 +175,48 @@ public class SpawnController : MonoBehaviour
         }
     }
 
-    #region ColliderPool
-    GameObject GetObj1()
+    public void GameUpdate()
     {
-        GameObject obj = null;
+        AddOrder order;
+        while (addOrders.Count > 0)
+        {
+            order = addOrders.Dequeue();
+            HandleAddOrder(order.colliderType, order.count);
+        }
+    }
+
+    #region ColliderPool
+    QuadTreeCollider GetObj1()
+    {
+        QuadTreeCollider tsfm = null;
         if (m_pool_1.Count == 0)
         {
-            obj = Instantiate(prefab1, pool1);
-            m_pool_1.Add(obj);
+            tsfm = Instantiate(prefab1, pool1);
+            m_pool_1.Add(tsfm);
         }
-        obj = m_pool_1[0];
+        tsfm = m_pool_1[0];
         m_pool_1.RemoveAt(0);
-        return obj;
+        return tsfm;
     }
-    void RecycleObj1(GameObject obj)
+    void RecycleObj1(QuadTreeCollider obj)
     {
         obj.transform.SetParent(pool1);
         m_pool_1.Add(obj);
     }
 
-    GameObject GetObj2()
+    QuadTreeCollider GetObj2()
     {
-        GameObject obj = null;
+        QuadTreeCollider tsfm = null;
         if (m_pool_2.Count == 0)
         {
-            obj = Instantiate(prefab2, pool2);
-            m_pool_2.Add(obj);
+            tsfm = Instantiate(prefab2, pool2);
+            m_pool_2.Add(tsfm);
         }
-        obj = m_pool_2[0];
+        tsfm = m_pool_2[0];
         m_pool_2.RemoveAt(0);
-        return obj;
+        return tsfm;
     }
-    void RecycleObj2(GameObject obj)
+    void RecycleObj2(QuadTreeCollider obj)
     {
         obj.transform.SetParent(pool2);
         m_pool_2.Add(obj);

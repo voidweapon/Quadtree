@@ -2,11 +2,18 @@
 using System.Collections.Generic;
 using UnityEngine;
 using Collision;
+using System.Collections.ObjectModel;
 
 public class CollisionController : MonoBehaviour
 {
     public QuadTree QuadTreeRoot;
     public BoxCollider2D boundary;
+
+    private List<QuadTree> treeNodePool = new List<QuadTree>();
+    private List<QuadTreeCollider> colliders = new List<QuadTreeCollider>();
+    private List<QuadTreeCollider> dirtyColliders = new List<QuadTreeCollider>();
+
+
     private static CollisionController m_instance = null;
     public static CollisionController Instance
     {
@@ -29,22 +36,88 @@ public class CollisionController : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        
+        for (int i = 0; i < 1000; i++)
+        {
+            treeNodePool.Add(new QuadTree(Rect.zero));
+        }
     }
 
-    // Update is called once per frame
-    void Update()
+
+    public void RegisteCollider(QuadTreeCollider obj)
     {
-        
+        colliders.Add(obj);
+        QuadTreeRoot.insert(obj.Transform);
     }
 
-    public void RegisteCollider(GameObject obj)
-    {
-        QuadTreeRoot.insert(obj);
-    }
-
-    public void UnRegisteCollider(GameObject obj)
+    public void UnRegisteCollider(QuadTreeCollider obj)
     {
         QuadTreeRoot.remove(obj);
+        colliders.Remove(obj);
+    }
+
+    public void GameFixedUpdate()
+    {
+
+    }
+
+    public void GameUpdate()
+    {
+        dirtyColliders.Clear();
+
+        foreach (var item in colliders)
+        {
+            item.GameUpdate();
+        }
+
+        foreach (var item in colliders)
+        {
+            if (item.IsDirty)
+            {
+                dirtyColliders.Add(item);
+            }
+        }
+
+        foreach (var item in dirtyColliders)
+        {
+            QuadTreeRoot.remove(item);
+        }
+        foreach (var item in dirtyColliders)
+        {
+            QuadTreeRoot.insert(item.transform);
+        }
+    }
+
+    public void GameLateUpdate()
+    {
+        foreach (var item in colliders)
+        {
+            item.GameLateUpdate();
+        }
+    }
+
+    public QuadTree GetTreeNodeFromPool()
+    {
+        if(treeNodePool.Count == 0)
+        {
+            for (int i = 0; i < 10; i++)
+            {
+                treeNodePool.Add(new QuadTree(Rect.zero));
+            }
+        }
+
+        QuadTree node = treeNodePool[0];
+        treeNodePool.RemoveAt(0);
+
+        return node;
+    }
+
+    public void RecycleTreeNode(QuadTree node)
+    {
+        treeNodePool.Add(node);
+    }
+
+    public ReadOnlyCollection<QuadTreeCollider> GetQuadTreeColliders()
+    {
+        return colliders.AsReadOnly();
     }
 }

@@ -1,15 +1,15 @@
 ﻿using System.Collections;
+using System;
 using System.Collections.ObjectModel;
 using System.Collections.Generic;
 using UnityEngine;
 
 namespace Collision
 {
-
     public class QuadTree
     {
-        int node_capacity = 4;
-        public List<GameObject> objects = null;
+        const int node_capacity = 4;
+        public List<Transform> objects = null;
 
         QuadTree northWest = null;
         QuadTree northEast = null;
@@ -20,7 +20,14 @@ namespace Collision
 
         public QuadTree(Rect boundary)
         {
-            objects = new List<GameObject>();
+            //objects = new GameObject[node_capacity];
+            objects = new List<Transform>();
+            //objects.Capacity = node_capacity;
+
+            this.boundary = boundary;
+        }
+        public void Init(Rect boundary)
+        {
             this.boundary = boundary;
         }
 
@@ -30,16 +37,20 @@ namespace Collision
         void subdivide()
         {
             Vector2 childSize = boundary.size / 2;
-            northWest = new QuadTree(new Rect(boundary.position.x,               boundary.position.y + childSize.y, 
+            northWest = CollisionController.Instance.GetTreeNodeFromPool();
+            northWest.Init(new Rect(boundary.position.x,               boundary.position.y + childSize.y, 
                                     childSize.x, childSize.y));
 
-            northEast = new QuadTree(new Rect(boundary.position.x + childSize.x, boundary.position.y + childSize.y, 
+            northEast = CollisionController.Instance.GetTreeNodeFromPool();
+            northEast.Init(new Rect(boundary.position.x + childSize.x, boundary.position.y + childSize.y,
                                     childSize.x, childSize.y));
 
-            southWest = new QuadTree(new Rect(boundary.position.x,               boundary.position.y, 
+            southWest = CollisionController.Instance.GetTreeNodeFromPool();
+            southWest.Init(new Rect(boundary.position.x, boundary.position.y,
                                     childSize.x, childSize.y));
 
-            southEast = new QuadTree(new Rect(boundary.position.x + childSize.x, boundary.position.y, 
+            southEast = CollisionController.Instance.GetTreeNodeFromPool();
+            southEast.Init(new Rect(boundary.position.x + childSize.x, boundary.position.y,
                                     childSize.x, childSize.y));
 
             for (int i = 0; i < objects.Count; i++)
@@ -59,15 +70,19 @@ namespace Collision
             objects.AddRange(southWest.objects);
             objects.AddRange(southEast.objects);
 
+            CollisionController.Instance.RecycleTreeNode(northWest);
+            CollisionController.Instance.RecycleTreeNode(northEast);
+            CollisionController.Instance.RecycleTreeNode(southWest);
+            CollisionController.Instance.RecycleTreeNode(southEast);
             northWest = null;
             northEast = null;
             southWest = null;
             southEast = null;
         }
 
-        public List<GameObject> queryRange(Rect rect)
+        public List<Transform> queryRange(Rect rect)
         {
-            List<GameObject> inRangeObject = new List<GameObject>();
+            List<Transform> inRangeObject = new List<Transform>();
 
             if(!boundary.Overlaps(rect, false))
             {
@@ -76,7 +91,7 @@ namespace Collision
 
             for (int i = 0; i < objects.Count; i++)
             {
-                if (rect.Contains(objects[i].transform.position))
+                if (rect.Contains(objects[i].position))
                 {
                     inRangeObject.Add(objects[i]);
                 }
@@ -93,9 +108,9 @@ namespace Collision
             return inRangeObject;
         }
 
-        public bool insert(GameObject obj)
+        public bool insert(Transform obj)
         {
-            if (!boundary.Contains(obj.transform.position))
+            if (!boundary.Contains(obj.position))
             {
                 return false;
             }
@@ -119,13 +134,13 @@ namespace Collision
             return false;
         }
 
-        public bool remove(GameObject obj)
+        public bool remove(QuadTreeCollider obj)
         {
-            if (!boundary.Contains(obj.transform.position))
+            if (!boundary.Contains(obj.LatePosition))
             {
                 return false;
             }
-            if (objects.Remove(obj))
+            if (objects.Remove(obj.Transform))
             {
                 return true;
             }
@@ -171,6 +186,7 @@ namespace Collision
         public int Count()
         {
             int total = 0;
+            
             total += objects.Count;
             if (northWest == null) return total;
 
@@ -184,10 +200,9 @@ namespace Collision
 
         public void DrawBoundary()
         {
-            Gizmos.DrawWireCube(boundary.position + boundary.size / 2, boundary.size);
-
             if (northWest == null)
             {
+                Gizmos.DrawWireCube(boundary.position + boundary.size / 2, boundary.size);
                 return;
             }
             else
@@ -197,6 +212,11 @@ namespace Collision
                 southWest.DrawBoundary();
                 southEast.DrawBoundary();
             }
+        }
+
+        public void Clear()
+        {
+            objects.Clear();
         }
     } 
 }
