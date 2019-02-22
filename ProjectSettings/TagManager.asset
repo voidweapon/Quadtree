@@ -6,6 +6,7 @@ TagManager:
   tags:
   - SpawnController
   - CollisionController
+  - MoverController
   layers:
   - Default
   - TransparentFX
