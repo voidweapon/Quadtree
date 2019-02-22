@@ -22,6 +22,7 @@ namespace Collision
         {
             //objects = new GameObject[node_capacity];
             objects = new List<Transform>();
+            objects.Capacity = 2 * node_capacity;
             //objects.Capacity = node_capacity;
 
             this.boundary = boundary;
@@ -111,7 +112,7 @@ namespace Collision
         public bool insert(Transform obj)
         {
             if (!boundary.Contains(obj.position))
-            {
+             {
                 return false;
             }
 

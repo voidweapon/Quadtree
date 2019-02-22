@@ -31,6 +31,10 @@ public class CollisionController : MonoBehaviour
     {
         Vector2 rectPos = new Vector2(boundary.transform.position.x, boundary.transform.position.y);
         QuadTreeRoot = new QuadTree(new Rect(rectPos - (boundary.size / 2), boundary.size));
+
+        treeNodePool.Capacity = 1000;
+        colliders.Capacity = 2000;
+        dirtyColliders.Capacity = 2000;
     }
 
     // Start is called before the first frame update
@@ -113,6 +117,7 @@ public class CollisionController : MonoBehaviour
 
     public void RecycleTreeNode(QuadTree node)
     {
+        node.Clear();
         treeNodePool.Add(node);
     }
 

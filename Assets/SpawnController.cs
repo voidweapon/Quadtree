@@ -49,6 +49,11 @@ public class SpawnController : MonoBehaviour
 
     private void InitObjectPool()
     {
+        m_pool_1.Capacity = 4000;
+        m_pool_2.Capacity = 4000;
+        activeObj1.Capacity = 1500;
+        activeObj2.Capacity = 1500;
+
         QuadTreeCollider obj = null;
         for (int i = 0; i < 3000; i++)
         {
@@ -130,6 +135,7 @@ public class SpawnController : MonoBehaviour
         Vector3 bundaryPosistion = bundary.gameObject.transform.position;
         Vector2 bundaryPosistion2D = new Vector2(bundaryPosistion.x, bundaryPosistion.y) - bundary.size / 2;
         List<QuadTreeCollider> newObj = new List<QuadTreeCollider>();
+        newObj.Capacity = count;
         switch (colliderType)
         {
             case ColliderType.Box:
