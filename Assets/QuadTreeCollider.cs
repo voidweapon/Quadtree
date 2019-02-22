@@ -44,8 +44,6 @@ public class QuadTreeCollider : MonoBehaviour
 
     public void GameLateUpdate()
     {
-        //m_transform.position = m_lastPosition;
         m_lastPosition = m_transform.position;
-
     }
 }

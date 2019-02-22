@@ -8,12 +8,14 @@ public class GameController : MonoBehaviour
 
     CollisionController collisionController;
     MoverController moverController;
-    SpawnController SpawnController;
+    SpawnController spawnController;
+    SearchController searchController;
     private void Awake()
     {
         collisionController = CollisionController.Instance;
         moverController = MoverController.Instance;
-        SpawnController = SpawnController.Instance;
+        spawnController = SpawnController.Instance;
+        searchController = SearchController.Instance;
     }
 
 
@@ -26,8 +28,11 @@ public class GameController : MonoBehaviour
         if (collisionController != null)
             collisionController.GameUpdate();
 
-        if (SpawnController != null)
-            SpawnController.GameUpdate();
+        if (searchController != null)
+            searchController.GameUpdate();
+
+        if (spawnController != null)
+            spawnController.GameUpdate();
     }
 
     private void LateUpdate()

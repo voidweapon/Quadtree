@@ -125,4 +125,9 @@ public class CollisionController : MonoBehaviour
     {
         return colliders.AsReadOnly();
     }
+
+    public void queryRange(Rect rect, List<Transform> result)
+    {
+        QuadTreeRoot.queryRange(rect, result);
+    }
 }

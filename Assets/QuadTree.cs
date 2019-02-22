@@ -81,13 +81,11 @@ namespace Collision
             southEast = null;
         }
 
-        public List<Transform> queryRange(Rect rect)
+        public void queryRange(Rect rect, List<Transform> inRangeObject)
         {
-            List<Transform> inRangeObject = new List<Transform>();
-
-            if(!boundary.Overlaps(rect, false))
+            if (!boundary.Overlaps(rect, false))
             {
-                return inRangeObject;
+                return;
             }
 
             for (int i = 0; i < objects.Count; i++)
@@ -99,14 +97,12 @@ namespace Collision
             }
 
             if (northWest == null)
-                return inRangeObject;
+                return;
 
-            inRangeObject.AddRange(northWest.queryRange(rect));
-            inRangeObject.AddRange(northEast.queryRange(rect));
-            inRangeObject.AddRange(southWest.queryRange(rect));
-            inRangeObject.AddRange(southEast.queryRange(rect));
-
-            return inRangeObject;
+            northWest.queryRange(rect, inRangeObject);
+            northEast.queryRange(rect, inRangeObject);
+            southWest.queryRange(rect, inRangeObject);
+            southEast.queryRange(rect, inRangeObject);
         }
 
         public bool insert(Transform obj)

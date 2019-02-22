@@ -114,8 +114,12 @@ public class SpawnController : MonoBehaviour
         Gizmos.DrawWireCube(Vector3.zero, bundary.size);
 
         Gizmos.color = Color.black;
-        if(CollisionController.Instance.QuadTreeRoot != null)
+        if(CollisionController.Instance != null 
+            && CollisionController.Instance.QuadTreeRoot != null)
             CollisionController.Instance.QuadTreeRoot.DrawBoundary();
+
+        if (SearchController.Instance != null)
+            SearchController.Instance.GameDrawGizmos();
 
         Gizmos.color = oldColor;
     }
