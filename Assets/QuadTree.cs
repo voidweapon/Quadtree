@@ -20,10 +20,8 @@ namespace Collision
 
         public QuadTree(Rect boundary)
         {
-            //objects = new GameObject[node_capacity];
             objects = new List<Transform>();
             objects.Capacity = 2 * node_capacity;
-            //objects.Capacity = node_capacity;
 
             this.boundary = boundary;
         }
@@ -217,3 +215,4 @@ namespace Collision
         }
     } 
 }
+   
