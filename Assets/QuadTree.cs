@@ -212,6 +212,10 @@ namespace Collision
         public void Clear()
         {
             objects.Clear();
+            northWest = null;
+            northEast = null;
+            southWest = null;
+            southEast = null;
         }
     } 
 }
