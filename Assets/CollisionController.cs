@@ -121,9 +121,9 @@ public class CollisionController : MonoBehaviour
         treeNodePool.Add(node);
     }
 
-    public ReadOnlyCollection<QuadTreeCollider> GetQuadTreeColliders()
+    public ref readonly List<QuadTreeCollider> GetQuadTreeColliders()
     {
-        return colliders.AsReadOnly();
+        return ref colliders;
     }
 
     public void queryRange(Rect rect, List<Transform> result)

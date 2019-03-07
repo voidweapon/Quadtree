@@ -14,7 +14,7 @@ public class SearchController : MonoBehaviour
     private static SearchController m_instance = null;
     private List<Rect> searchRects = new List<Rect>();
     private List<Transform> results = new List<Transform>();
-    ReadOnlyCollection<QuadTreeCollider> collections = null;
+    List<QuadTreeCollider> collections = null;
 
     public static SearchController Instance
     {
