@@ -16,67 +16,158 @@ namespace Collision
         QuadTree southWest = null;
         QuadTree southEast = null;
 
+        Rect northWestRect = Rect.zero;
+        Rect northEastRect = Rect.zero;
+        Rect southWestRect = Rect.zero;
+        Rect southEastRect = Rect.zero;
+
         Rect boundary;
+
+        bool haveChild = false;
 
         public QuadTree(Rect boundary)
         {
             objects = new List<Transform>();
             objects.Capacity = 2 * node_capacity;
 
-            this.boundary = boundary;
+            Init(boundary);
         }
         public void Init(Rect boundary)
         {
+            haveChild = false;
             this.boundary = boundary;
+
+            Vector2 childSize = boundary.size / 2;
+
+            northWestRect = new Rect(boundary.position.x, boundary.position.y + childSize.y,
+                                    childSize.x, childSize.y);
+
+            northEastRect = new Rect(boundary.position.x + childSize.x, boundary.position.y + childSize.y,
+                                    childSize.x, childSize.y);
+
+            southWestRect = new Rect(boundary.position.x, boundary.position.y,
+                                    childSize.x, childSize.y);
+
+            southEastRect = new Rect(boundary.position.x + childSize.x, boundary.position.y,
+                                    childSize.x, childSize.y);
         }
 
         /// <summary>
         /// 继续细分区域
         /// </summary>
-        void subdivide()
+        void subdivide(Transform obj)
         {
-            Vector2 childSize = boundary.size / 2;
-            northWest = CollisionController.Instance.GetTreeNodeFromPool();
-            northWest.Init(new Rect(boundary.position.x,               boundary.position.y + childSize.y, 
-                                    childSize.x, childSize.y));
-
-            northEast = CollisionController.Instance.GetTreeNodeFromPool();
-            northEast.Init(new Rect(boundary.position.x + childSize.x, boundary.position.y + childSize.y,
-                                    childSize.x, childSize.y));
-
-            southWest = CollisionController.Instance.GetTreeNodeFromPool();
-            southWest.Init(new Rect(boundary.position.x, boundary.position.y,
-                                    childSize.x, childSize.y));
-
-            southEast = CollisionController.Instance.GetTreeNodeFromPool();
-            southEast.Init(new Rect(boundary.position.x + childSize.x, boundary.position.y,
-                                    childSize.x, childSize.y));
-
+           
             for (int i = 0; i < objects.Count; i++)
             {
-                if (northWest.insert(objects[i])) continue;
-                if (northEast.insert(objects[i])) continue;
-                if (southWest.insert(objects[i])) continue;
-                if (southEast.insert(objects[i])) continue;
+                if (northWestRect.Contains(objects[i].position))
+                {
+                    if(northWest == null)
+                    {
+                        northWest = CollisionController.Instance.GetTreeNodeFromPool();
+                        northWest.Init(northWestRect);
+                    }
+                    northWest.inserToThisNode(objects[i]);
+                }
+                else if (northEastRect.Contains(objects[i].position))
+                {
+                    if (northEast == null)
+                    {
+                        northEast = CollisionController.Instance.GetTreeNodeFromPool();
+                        northEast.Init(northEastRect);
+                    }
+                    northEast.inserToThisNode(objects[i]);
+                }
+                else if (southWestRect.Contains(objects[i].position))
+                {
+                    if (southWest == null)
+                    {
+                        southWest = CollisionController.Instance.GetTreeNodeFromPool();
+                        southWest.Init(southWestRect);
+                    }
+                    southWest.inserToThisNode(objects[i]);
+                }
+                else if (southEastRect.Contains(objects[i].position))
+                {
+                    if (southEast == null)
+                    {
+                        southEast = CollisionController.Instance.GetTreeNodeFromPool();
+                        southEast.Init(southEastRect);
+                    }
+                    southEast.inserToThisNode(objects[i]);
+                }
             }
+
             objects.Clear();
+            haveChild = true;
+
+            if (northWestRect.Contains(obj.position))
+            {
+                if (northWest == null)
+                {
+                    northWest = CollisionController.Instance.GetTreeNodeFromPool();
+                    northWest.Init(northWestRect);
+                }
+                northWest.inserToThisNode(obj);
+            }
+            else if (northEastRect.Contains(obj.position))
+            {
+                if (northEast == null)
+                {
+                    northEast = CollisionController.Instance.GetTreeNodeFromPool();
+                    northEast.Init(northEastRect);
+                }
+                northEast.inserToThisNode(obj);
+            }
+            else if(southWestRect.Contains(obj.position))
+            {
+                if (southWest == null)
+                {
+                    southWest = CollisionController.Instance.GetTreeNodeFromPool();
+                    southWest.Init(southWestRect);
+                }
+                southWest.inserToThisNode(obj);
+            }
+            else if(southEastRect.Contains(obj.position))
+            {
+                if (southEast == null)
+                {
+                    southEast = CollisionController.Instance.GetTreeNodeFromPool();
+                    southEast.Init(southEastRect);
+                }
+                southEast.inserToThisNode(obj);
+            }
         }
 
         void collapse()
         {
-            objects.AddRange(northWest.objects);
-            objects.AddRange(northEast.objects);
-            objects.AddRange(southWest.objects);
-            objects.AddRange(southEast.objects);
+            if(northWest != null)
+            {
+                objects.AddRange(northWest.objects);
+                CollisionController.Instance.RecycleTreeNode(northWest);
+            }
+            if (northEast != null)
+            {
+                objects.AddRange(northEast.objects);
+                CollisionController.Instance.RecycleTreeNode(northEast);
+            }
+            if (southWest != null)
+            {
+                objects.AddRange(southWest.objects);
+                CollisionController.Instance.RecycleTreeNode(southWest);
+            }
+            if (southEast != null)
+            {
+                objects.AddRange(southEast.objects);
+                CollisionController.Instance.RecycleTreeNode(southEast);
+            }
 
-            CollisionController.Instance.RecycleTreeNode(northWest);
-            CollisionController.Instance.RecycleTreeNode(northEast);
-            CollisionController.Instance.RecycleTreeNode(southWest);
-            CollisionController.Instance.RecycleTreeNode(southEast);
             northWest = null;
             northEast = null;
             southWest = null;
             southEast = null;
+
+            haveChild = false;
         }
 
         public void queryRange(Rect rect, List<Transform> inRangeObject)
@@ -86,21 +177,30 @@ namespace Collision
                 return;
             }
 
-            for (int i = 0; i < objects.Count; i++)
+            if (haveChild)
             {
-                if (rect.Contains(objects[i].position))
+                if (northWest != null)
+                    northWest.queryRange(rect, inRangeObject);
+
+                if (northEast != null)
+                    northEast.queryRange(rect, inRangeObject);
+
+                if (southWest != null)
+                    southWest.queryRange(rect, inRangeObject);
+
+                if (southEast != null)
+                    southEast.queryRange(rect, inRangeObject);
+            }
+            else
+            {
+                for (int i = 0; i < objects.Count; i++)
                 {
-                    inRangeObject.Add(objects[i]);
+                    if (rect.Contains(objects[i].position))
+                    {
+                        inRangeObject.Add(objects[i]);
+                    }
                 }
             }
-
-            if (northWest == null)
-                return;
-
-            northWest.queryRange(rect, inRangeObject);
-            northEast.queryRange(rect, inRangeObject);
-            southWest.queryRange(rect, inRangeObject);
-            southEast.queryRange(rect, inRangeObject);
         }
 
         public bool insert(Transform obj)
@@ -110,21 +210,81 @@ namespace Collision
                 return false;
             }
 
-            if(objects.Count < node_capacity && northWest == null)
-            {
-                objects.Add(obj);
-                return true;
-            }
+            return inserToThisNode(obj);
+        }
 
-            if(northWest == null)
+        private bool inserToThisNode(Transform obj)
+        {
+            Vector3 position = obj.position;
+            if (haveChild)
             {
-                subdivide();
-            }
+                if(northWest == null)
+                {
+                    if (northWestRect.Contains(position))
+                    {
+                        northWest = CollisionController.Instance.GetTreeNodeFromPool();
+                        northWest.Init(northWestRect);
+                        northWest.inserToThisNode(obj);
+                    }
+                }
+                else if(northWest.insert(obj))
+                {
+                    return true;
+                }
 
-            if (northWest.insert(obj)) return true;
-            if (northEast.insert(obj)) return true;
-            if (southWest.insert(obj)) return true;
-            if (southEast.insert(obj)) return true;
+                if (northEast == null)
+                {
+                    if (northEastRect.Contains(position))
+                    {
+                        northEast = CollisionController.Instance.GetTreeNodeFromPool();
+                        northEast.Init(northEastRect);
+                        northEast.inserToThisNode(obj);
+                    }
+                }
+                else if (northEast.insert(obj))
+                {
+                    return true;
+                }
+
+                if (southWest == null)
+                {
+                    if (southWestRect.Contains(position))
+                    {
+                        southWest = CollisionController.Instance.GetTreeNodeFromPool();
+                        southWest.Init(southWestRect);
+                        southWest.inserToThisNode(obj);
+                    }
+                }
+                else if (southWest.insert(obj))
+                {
+                    return true;
+                }
+
+                if (southEast == null)
+                {
+                    if (southEastRect.Contains(position))
+                    {
+                        southEast = CollisionController.Instance.GetTreeNodeFromPool();
+                        southEast.Init(southEastRect);
+                        southEast.inserToThisNode(obj);
+                    }
+                }
+                else if (southEast.insert(obj))
+                {
+                    return true;
+                }
+            }
+            else
+            {
+                if (objects.Count < node_capacity)
+                {
+                    objects.Add(obj);
+                    return true;
+                }
+
+               subdivide(obj);
+               return true;
+            }
 
             return false;
         }
@@ -135,43 +295,46 @@ namespace Collision
             {
                 return false;
             }
-            if (objects.Remove(obj.Transform))
-            {
-                return true;
-            }
 
-            if(northWest == null)
+            if (haveChild)
             {
-                return false;
-            }
-
-            bool isChanged = false;
-            if (northWest.remove(obj))
-            {
-                isChanged = true;
-            }
-            else if (northEast.remove(obj))
-            {
-                isChanged = true;
-            }
-            else if (southWest.remove(obj))
-            {
-                isChanged = true;
-            }
-            else if (southEast.remove(obj))
-            {
-                isChanged = true;
-            }
-            if (isChanged)
-            {
+                bool isChanged = false;
                 int total = 0;
-                total += northWest.Count();
-                total += northEast.Count();
-                total += southWest.Count();
-                total += southEast.Count();
-                if(total <= node_capacity)
+                if (northWest != null && northWest.remove(obj))
                 {
-                    collapse();
+                    isChanged = true;
+                    total += northWest.Count();
+                }
+                else if (northEast != null && northEast.remove(obj))
+                {
+                    isChanged = true;
+                    total += northEast.Count();
+                }
+                else if (southWest != null && southWest.remove(obj))
+                {
+                    isChanged = true;
+                    total += southWest.Count();
+                }
+                else if (southEast != null && southEast.remove(obj))
+                {
+                    isChanged = true;
+                    total += southEast.Count();
+                }
+
+                if (isChanged)
+                {
+                    if (total <= node_capacity)
+                    {
+                        collapse();
+                    }
+                    return true;
+                }
+            }
+            else
+            {
+                if (objects.Remove(obj.Transform))
+                {
+                    return true;
                 }
             }
 
@@ -181,37 +344,49 @@ namespace Collision
         public int Count()
         {
             int total = 0;
+            if (haveChild)
+            {
+                if(northWest != null)
+                    total += northWest.Count();
+                if (northEast != null)
+                    total += northEast.Count();
+                if (southWest != null)
+                    total += southWest.Count();
+                if (southEast != null)
+                    total += southEast.Count();
+            }
+            else
+            {
+                total = objects.Count;
+            }
             
-            total += objects.Count;
-            if (northWest == null) return total;
-
-            total += northWest.Count();
-            total += northEast.Count();
-            total += southWest.Count();
-            total += southEast.Count();
-
             return total;
         }
 
         public void DrawBoundary()
         {
-            if (northWest == null)
+
+            if (haveChild)
             {
-                Gizmos.DrawWireCube(boundary.position + boundary.size / 2, boundary.size);
-                return;
+                if (northWest != null)
+                    northWest.DrawBoundary();
+                if (northEast != null)
+                    northEast.DrawBoundary();
+                if (southWest != null)
+                    southWest.DrawBoundary();
+                if (southEast != null)
+                    southEast.DrawBoundary();
             }
             else
             {
-                northWest.DrawBoundary();
-                northEast.DrawBoundary();
-                southWest.DrawBoundary();
-                southEast.DrawBoundary();
+                Gizmos.DrawWireCube(boundary.position + boundary.size / 2, boundary.size);
             }
         }
 
         public void Clear()
         {
             objects.Clear();
+            haveChild = false;
             northWest = null;
             northEast = null;
             southWest = null;

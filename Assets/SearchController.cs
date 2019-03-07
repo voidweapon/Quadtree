@@ -7,7 +7,7 @@ public class SearchController : MonoBehaviour
 {
     public BoxCollider2D boundaryCollider;
 
-    private int searchCount = 500;
+    private int searchCount = 0;
     private Color SearchBoxColor = Color.red;
     private Color resultObjColor = Color.green;
 
