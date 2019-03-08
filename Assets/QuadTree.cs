@@ -303,26 +303,27 @@ namespace Collision
                 if (northWest != null && northWest.remove(obj))
                 {
                     isChanged = true;
-                    total += northWest.Count();
                 }
                 else if (northEast != null && northEast.remove(obj))
                 {
                     isChanged = true;
-                    total += northEast.Count();
                 }
                 else if (southWest != null && southWest.remove(obj))
                 {
                     isChanged = true;
-                    total += southWest.Count();
                 }
                 else if (southEast != null && southEast.remove(obj))
                 {
                     isChanged = true;
-                    total += southEast.Count();
                 }
 
                 if (isChanged)
                 {
+                    if (northWest != null) total += northWest.Count();
+                    if (northEast != null) total += northEast.Count();
+                    if (southWest != null) total += southWest.Count();
+                    if (southEast != null) total += southEast.Count();
+
                     if (total <= node_capacity)
                     {
                         collapse();
