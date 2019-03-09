@@ -23,18 +23,20 @@ namespace Collision
 
         Rect boundary;
 
-        bool haveChild = false;
+        int objectCount = 0;
+        bool isSubdivided = false;
 
         public QuadTree(Rect boundary)
         {
             objects = new List<Transform>();
-            objects.Capacity = 2 * node_capacity;
+            //+1 是保证细分时添加进待加对象时，不出发容量调整
+            objects.Capacity = 2 * (node_capacity + 1);
 
             Init(boundary);
         }
         public void Init(Rect boundary)
         {
-            haveChild = false;
+            isSubdivided = false;
             this.boundary = boundary;
 
             Vector2 childSize = boundary.size / 2;
@@ -57,7 +59,7 @@ namespace Collision
         /// </summary>
         void subdivide(Transform obj)
         {
-           
+            objects.Add(obj);
             for (int i = 0; i < objects.Count; i++)
             {
                 if (northWestRect.Contains(objects[i].position))
@@ -99,44 +101,7 @@ namespace Collision
             }
 
             objects.Clear();
-            haveChild = true;
-
-            if (northWestRect.Contains(obj.position))
-            {
-                if (northWest == null)
-                {
-                    northWest = CollisionController.Instance.GetTreeNodeFromPool();
-                    northWest.Init(northWestRect);
-                }
-                northWest.inserToThisNode(obj);
-            }
-            else if (northEastRect.Contains(obj.position))
-            {
-                if (northEast == null)
-                {
-                    northEast = CollisionController.Instance.GetTreeNodeFromPool();
-                    northEast.Init(northEastRect);
-                }
-                northEast.inserToThisNode(obj);
-            }
-            else if(southWestRect.Contains(obj.position))
-            {
-                if (southWest == null)
-                {
-                    southWest = CollisionController.Instance.GetTreeNodeFromPool();
-                    southWest.Init(southWestRect);
-                }
-                southWest.inserToThisNode(obj);
-            }
-            else if(southEastRect.Contains(obj.position))
-            {
-                if (southEast == null)
-                {
-                    southEast = CollisionController.Instance.GetTreeNodeFromPool();
-                    southEast.Init(southEastRect);
-                }
-                southEast.inserToThisNode(obj);
-            }
+            isSubdivided = true;
         }
 
         void collapse()
@@ -166,8 +131,7 @@ namespace Collision
             northEast = null;
             southWest = null;
             southEast = null;
-
-            haveChild = false;
+            isSubdivided = false;
         }
 
         public void queryRange(Rect rect, List<Transform> inRangeObject)
@@ -177,7 +141,7 @@ namespace Collision
                 return;
             }
 
-            if (haveChild)
+            if (isSubdivided)
             {
                 if (northWest != null)
                     northWest.queryRange(rect, inRangeObject);
@@ -216,62 +180,43 @@ namespace Collision
         private bool inserToThisNode(Transform obj)
         {
             Vector3 position = obj.position;
-            if (haveChild)
+            if (isSubdivided)
             {
-                if(northWest == null)
+                if (northWestRect.Contains(position))
                 {
-                    if (northWestRect.Contains(position))
+                    if (northWest == null)
                     {
                         northWest = CollisionController.Instance.GetTreeNodeFromPool();
                         northWest.Init(northWestRect);
-                        northWest.inserToThisNode(obj);
                     }
+                    northWest.inserToThisNode(obj);
                 }
-                else if(northWest.insert(obj))
+                else if (northEastRect.Contains(position))
                 {
-                    return true;
-                }
-
-                if (northEast == null)
-                {
-                    if (northEastRect.Contains(position))
+                    if (northEast == null)
                     {
                         northEast = CollisionController.Instance.GetTreeNodeFromPool();
                         northEast.Init(northEastRect);
-                        northEast.inserToThisNode(obj);
                     }
+                    northEast.inserToThisNode(obj);
                 }
-                else if (northEast.insert(obj))
+                else if (southWestRect.Contains(position))
                 {
-                    return true;
-                }
-
-                if (southWest == null)
-                {
-                    if (southWestRect.Contains(position))
+                    if (southWest == null)
                     {
                         southWest = CollisionController.Instance.GetTreeNodeFromPool();
                         southWest.Init(southWestRect);
-                        southWest.inserToThisNode(obj);
                     }
+                    southWest.inserToThisNode(obj);
                 }
-                else if (southWest.insert(obj))
+                else if (southEastRect.Contains(position))
                 {
-                    return true;
-                }
-
-                if (southEast == null)
-                {
-                    if (southEastRect.Contains(position))
+                    if (southEast == null)
                     {
                         southEast = CollisionController.Instance.GetTreeNodeFromPool();
                         southEast.Init(southEastRect);
-                        southEast.inserToThisNode(obj);
                     }
-                }
-                else if (southEast.insert(obj))
-                {
-                    return true;
+                    southEast.inserToThisNode(obj);
                 }
             }
             else
@@ -279,14 +224,14 @@ namespace Collision
                 if (objects.Count < node_capacity)
                 {
                     objects.Add(obj);
-                    return true;
                 }
-
-               subdivide(obj);
-               return true;
+                else
+                {
+                    subdivide(obj);
+                }
             }
-
-            return false;
+            objectCount++;
+            return true;
         }
 
         public bool remove(QuadTreeCollider obj)
@@ -296,89 +241,87 @@ namespace Collision
                 return false;
             }
 
-            if (haveChild)
+            bool haveChange = false;
+            if(northWest != null && northWest.remove(obj))
             {
-                bool isChanged = false;
-                int total = 0;
-                if (northWest != null && northWest.remove(obj))
+                haveChange = true;
+                if(northWest.Count() == 0)
                 {
-                    isChanged = true;
-                }
-                else if (northEast != null && northEast.remove(obj))
-                {
-                    isChanged = true;
-                }
-                else if (southWest != null && southWest.remove(obj))
-                {
-                    isChanged = true;
-                }
-                else if (southEast != null && southEast.remove(obj))
-                {
-                    isChanged = true;
-                }
-
-                if (isChanged)
-                {
-                    if (northWest != null) total += northWest.Count();
-                    if (northEast != null) total += northEast.Count();
-                    if (southWest != null) total += southWest.Count();
-                    if (southEast != null) total += southEast.Count();
-
-                    if (total <= node_capacity)
-                    {
-                        collapse();
-                    }
-                    return true;
+                    CollisionController.Instance.RecycleTreeNode(northWest);
+                    northWest = null;
                 }
             }
-            else
+            else if (northEast != null && northEast.remove(obj))
             {
-                if (objects.Remove(obj.Transform))
+                haveChange = true;
+                if (northEast.Count() == 0)
                 {
-                    return true;
+                    CollisionController.Instance.RecycleTreeNode(northEast);
+                    northEast = null;
                 }
             }
+            else if (southWest != null && southWest.remove(obj))
+            {
+                haveChange = true;
+                if (southWest.Count() == 0)
+                {
+                    CollisionController.Instance.RecycleTreeNode(southWest);
+                    southWest = null;
+                }
+            }
+            else if (southEast != null && southEast.remove(obj))
+            {
+                haveChange = true;
+                if (southEast.Count() == 0)
+                {
+                    CollisionController.Instance.RecycleTreeNode(southEast);
+                    southEast = null;
+                }
+            }
+            if (!haveChange)
+            {
+                objects.Remove(obj.Transform);
+            }
 
-            return false;
+            objectCount--;
+            if(objectCount < node_capacity)
+            {
+                collapse();
+            }
+
+            return true;
         }
 
         public int Count()
-        {
-            int total = 0;
-            if (haveChild)
-            {
-                if(northWest != null)
-                    total += northWest.Count();
-                if (northEast != null)
-                    total += northEast.Count();
-                if (southWest != null)
-                    total += southWest.Count();
-                if (southEast != null)
-                    total += southEast.Count();
-            }
-            else
-            {
-                total = objects.Count;
-            }
-            
-            return total;
+        {          
+            return objectCount;
         }
 
         public void DrawBoundary()
         {
-
-            if (haveChild)
+            bool haveChild = false;
+            if (northWest != null)
             {
-                if (northWest != null)
-                    northWest.DrawBoundary();
-                if (northEast != null)
-                    northEast.DrawBoundary();
-                if (southWest != null)
-                    southWest.DrawBoundary();
-                if (southEast != null)
-                    southEast.DrawBoundary();
+                northWest.DrawBoundary();
+                haveChild = true;
             }
-            else
+            if (northEast != null)
+            {
+                northEast.DrawBoundary();
+                haveChild = true;
+            }
+            if (southWest != null)
+            {
+                southWest.DrawBoundary();
+                haveChild = true;
+            }
+            if (southEast != null)
+            {
+                southEast.DrawBoundary();
+                haveChild = true;
+            }
+
+            if (!haveChild)
             {
                 Gizmos.DrawWireCube(boundary.position + boundary.size / 2, boundary.size);
             }
@@ -387,7 +330,7 @@ namespace Collision
         public void Clear()
         {
             objects.Clear();
-            haveChild = false;
+            objectCount = 0;
             northWest = null;
             northEast = null;
             southWest = null;
