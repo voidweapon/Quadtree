@@ -50,7 +50,7 @@ public class CollisionController : MonoBehaviour
     public void RegisteCollider(QuadTreeCollider obj)
     {
         colliders.Add(obj);
-        QuadTreeRoot.insert(obj.Transform);
+        QuadTreeRoot.insert(obj);
     }
 
     public void UnRegisteCollider(QuadTreeCollider obj)
@@ -72,12 +72,16 @@ public class CollisionController : MonoBehaviour
         {
             item.GameUpdate();
         }
-
+        QuadTree node = null;
         foreach (var item in colliders)
         {
             if (item.IsDirty)
             {
-                dirtyColliders.Add(item);
+                node = item.TreeNode();
+                if(node != null && !node.Contains(item.position))
+                {
+                    dirtyColliders.Add(item);
+                }
             }
         }
 
@@ -87,7 +91,7 @@ public class CollisionController : MonoBehaviour
         }
         foreach (var item in dirtyColliders)
         {
-            QuadTreeRoot.insert(item.transform);
+            QuadTreeRoot.insert(item);
         }
     }
 
@@ -126,7 +130,7 @@ public class CollisionController : MonoBehaviour
         return ref colliders;
     }
 
-    public void queryRange(Rect rect, List<Transform> result)
+    public void queryRange(Rect rect, List<QuadTreeCollider> result)
     {
         QuadTreeRoot.queryRange(rect, result);
     }

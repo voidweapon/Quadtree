@@ -9,7 +9,7 @@ namespace Collision
     public class QuadTree
     {
         const int node_capacity = 4;
-        public List<Transform> objects = null;
+        List<QuadTreeCollider> objects = null;
 
         QuadTree northWest = null;
         QuadTree northEast = null;
@@ -28,8 +28,8 @@ namespace Collision
 
         public QuadTree(Rect boundary)
         {
-            objects = new List<Transform>();
-            //+1 是保证细分时添加进待加对象时，不出发容量调整
+            objects = new List<QuadTreeCollider>();
+            //+1 是保证细分时添加进待加对象时，不触发容量调整
             objects.Capacity = 2 * (node_capacity + 1);
 
             Init(boundary);
@@ -57,7 +57,7 @@ namespace Collision
         /// <summary>
         /// 继续细分区域
         /// </summary>
-        void subdivide(Transform obj)
+        void subdivide(QuadTreeCollider obj)
         {
             objects.Add(obj);
             for (int i = 0; i < objects.Count; i++)
@@ -127,6 +127,11 @@ namespace Collision
                 CollisionController.Instance.RecycleTreeNode(southEast);
             }
 
+            for (int i = 0; i < objects.Count; i++)
+            {
+                objects[i].SetTreeNode(this);
+            }
+
             northWest = null;
             northEast = null;
             southWest = null;
@@ -134,7 +139,7 @@ namespace Collision
             isSubdivided = false;
         }
 
-        public void queryRange(Rect rect, List<Transform> inRangeObject)
+        public void queryRange(Rect rect, List<QuadTreeCollider> inRangeObject)
         {
             if (!boundary.Overlaps(rect, false))
             {
@@ -167,7 +172,7 @@ namespace Collision
             }
         }
 
-        public bool insert(Transform obj)
+        public bool insert(QuadTreeCollider obj)
         {
             if (!boundary.Contains(obj.position))
              {
@@ -177,7 +182,7 @@ namespace Collision
             return inserToThisNode(obj);
         }
 
-        private bool inserToThisNode(Transform obj)
+        private bool inserToThisNode(QuadTreeCollider obj)
         {
             Vector3 position = obj.position;
             if (isSubdivided)
@@ -224,6 +229,7 @@ namespace Collision
                 if (objects.Count < node_capacity)
                 {
                     objects.Add(obj);
+                    obj.SetTreeNode(this);
                 }
                 else
                 {
@@ -280,7 +286,8 @@ namespace Collision
             }
             if (!haveChange)
             {
-                objects.Remove(obj.Transform);
+                objects.Remove(obj);
+                obj.SetTreeNode(null);
             }
 
             objectCount--;
@@ -295,6 +302,11 @@ namespace Collision
         public int Count()
         {          
             return objectCount;
+        }
+
+        public bool Contains(Vector3 position)
+        {
+            return boundary.Contains(position);
         }
 
         public void DrawBoundary()

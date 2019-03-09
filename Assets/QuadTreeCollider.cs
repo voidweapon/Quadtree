@@ -18,10 +18,14 @@ public class QuadTreeCollider : MonoBehaviour
     private Vector3 m_lastPosition = Vector3.zero;
     public Vector3 LatePosition { get { return m_lastPosition; } }
 
+    public Vector3 position { get { return m_transform.position; } }
+
     private float m_speed = 0.1f;
     public float Speed { get { return m_speed; } }
     public int RandomMoveFrame = 0;
     public Vector2 Direction = Vector2.zero;
+
+    private Collision.QuadTree m_treeNode = null;
 
     public void Init()
     {
@@ -45,5 +49,14 @@ public class QuadTreeCollider : MonoBehaviour
     public void GameLateUpdate()
     {
         m_lastPosition = m_transform.position;
+    }
+
+    public ref readonly Collision.QuadTree TreeNode()
+    {
+        return ref m_treeNode;
+    }
+    public void SetTreeNode(Collision.QuadTree node)
+    {
+        this.m_treeNode = node;
     }
 }
