@@ -69,7 +69,7 @@ namespace Collision
                         northWest = CollisionController.Instance.GetTreeNodeFromPool();
                         northWest.Init(northWestRect);
                     }
-                    northWest.inserToThisNode(objects[i]);
+                    northWest.inserInner(objects[i]);
                 }
                 else if (northEastRect.Contains(objects[i].position))
                 {
@@ -78,7 +78,7 @@ namespace Collision
                         northEast = CollisionController.Instance.GetTreeNodeFromPool();
                         northEast.Init(northEastRect);
                     }
-                    northEast.inserToThisNode(objects[i]);
+                    northEast.inserInner(objects[i]);
                 }
                 else if (southWestRect.Contains(objects[i].position))
                 {
@@ -87,7 +87,7 @@ namespace Collision
                         southWest = CollisionController.Instance.GetTreeNodeFromPool();
                         southWest.Init(southWestRect);
                     }
-                    southWest.inserToThisNode(objects[i]);
+                    southWest.inserInner(objects[i]);
                 }
                 else if (southEastRect.Contains(objects[i].position))
                 {
@@ -96,7 +96,7 @@ namespace Collision
                         southEast = CollisionController.Instance.GetTreeNodeFromPool();
                         southEast.Init(southEastRect);
                     }
-                    southEast.inserToThisNode(objects[i]);
+                    southEast.inserInner(objects[i]);
                 }
             }
 
@@ -179,10 +179,10 @@ namespace Collision
                 return false;
             }
 
-            return inserToThisNode(obj);
+            return inserInner(obj);
         }
 
-        private bool inserToThisNode(QuadTreeCollider obj)
+        private bool inserInner(QuadTreeCollider obj)
         {
             Vector3 position = obj.position;
             if (isSubdivided)
@@ -194,7 +194,7 @@ namespace Collision
                         northWest = CollisionController.Instance.GetTreeNodeFromPool();
                         northWest.Init(northWestRect);
                     }
-                    northWest.inserToThisNode(obj);
+                    northWest.inserInner(obj);
                 }
                 else if (northEastRect.Contains(position))
                 {
@@ -203,7 +203,7 @@ namespace Collision
                         northEast = CollisionController.Instance.GetTreeNodeFromPool();
                         northEast.Init(northEastRect);
                     }
-                    northEast.inserToThisNode(obj);
+                    northEast.inserInner(obj);
                 }
                 else if (southWestRect.Contains(position))
                 {
@@ -212,7 +212,7 @@ namespace Collision
                         southWest = CollisionController.Instance.GetTreeNodeFromPool();
                         southWest.Init(southWestRect);
                     }
-                    southWest.inserToThisNode(obj);
+                    southWest.inserInner(obj);
                 }
                 else if (southEastRect.Contains(position))
                 {
@@ -221,7 +221,7 @@ namespace Collision
                         southEast = CollisionController.Instance.GetTreeNodeFromPool();
                         southEast.Init(southEastRect);
                     }
-                    southEast.inserToThisNode(obj);
+                    southEast.inserInner(obj);
                 }
             }
             else
