@@ -16,6 +16,9 @@ public class SearchController : MonoBehaviour
     private List<QuadTreeCollider> results = new List<QuadTreeCollider>();
     List<QuadTreeCollider> collections = null;
 
+    Rect searchCountShowerRect = new Rect(0, 0, 100, 25);
+    private string searchCountStr;
+
     public static SearchController Instance
     {
         get
@@ -44,6 +47,7 @@ public class SearchController : MonoBehaviour
         }
 
         results.Capacity = 500;
+        searchCountStr = $"Search: {searchCount}";
     }
 
     public void GameUpdate()
@@ -81,5 +85,10 @@ public class SearchController : MonoBehaviour
     Vector2 RandomPosition(Vector2 bundary)
     {
         return new Vector2(Random.value * bundary.x, Random.value * bundary.y);
+    }
+
+    private void OnGUI()
+    {
+        GUI.TextField(searchCountShowerRect, searchCountStr);
     }
 }

@@ -30,6 +30,22 @@ public class SpawnController : MonoBehaviour
     private List<QuadTreeCollider> activeObj2 = new List<QuadTreeCollider>();
 
     private Queue<AddOrder> addOrders = new Queue<AddOrder>();
+    private int _totalAgentCount;
+    private int totalAgentCount {
+        get 
+        { 
+            return _totalAgentCount; 
+        }
+        set
+        { 
+            if(_totalAgentCount != value)
+            {
+                totalAgentCountStr = $"{value}";
+            }
+            _totalAgentCount = value; 
+        } 
+    }
+    private string totalAgentCountStr;
 
     private static SpawnController m_instance = null;
     public static SpawnController Instance {
@@ -103,7 +119,9 @@ public class SpawnController : MonoBehaviour
         if (GUI.Button(new Rect(BtnPos, m_btnSize), "Clear"))
         {
             ClearCollider();
-        }        
+        }
+
+        GUI.TextField(new Rect(0, 25, 100, 25), totalAgentCountStr);
     }
 
     private void OnDrawGizmos()
@@ -131,6 +149,7 @@ public class SpawnController : MonoBehaviour
             colliderType = colliderType,
             count = count,
         });
+        totalAgentCount += count;
     }
 
     private void HandleAddOrder(ColliderType colliderType, int count)
@@ -183,6 +202,7 @@ public class SpawnController : MonoBehaviour
             RecycleObj2(activeObj2[i]);
             CollisionController.Instance.UnRegisteCollider(activeObj2[i]);
         }
+        totalAgentCount = 0;
     }
 
     public void GameUpdate()
